@@ -1,0 +1,87 @@
+import pandas as pd
+#import xlrd
+#import xlwt
+import numpy as np
+
+'''
+#formatting Excel
+#need to find way to insert row and write column headers
+#or see if I just xls to csv if I can create headers
+
+
+def getExcel (filename):
+  data_xls = xlrd.open_workbook(filename)
+  sheet_names = data_xls.sheet_names()
+  sheet_xls = data_xls.sheet_by_index(0)
+  data_csv = data_xls.to_csv(filename, encoding='utf-8')
+  print(data_csv)
+  return data_csv
+
+getExcel('PinesAll.xls')
+'''
+
+
+#List of all CSV files
+csv_data_list=['PinesIdeal.csv']
+#Empty list for dataframes
+df_list_holder=[]
+
+def CSVformatting(csv_list):
+  for item in csv_list:
+
+    #Importing the CSV files
+    csv_data = pd.read_csv(item)
+    csv_data.dropna(axis=0, inplace=True)
+    csv_data.drop(['Initials','Price','Total'],axis=1,inplace=True)
+
+    #Renaming Column header to location name
+    name = int(csv_data.iloc[0][1])
+    if name==1:
+      name = 'Pines'
+    elif name==5:
+      name = 'Ocean View'
+    elif name == 6:
+      name = 'Goody''s Place'
+    elif name == 11:
+      name = 'Foodworx'
+    elif name == 12:
+      name= 'Revelle Catering'
+    elif name == 15:
+      name = 'Club Med'
+    elif name == 18:
+      name = 'Cafe Ventanas'
+    elif name == 24:
+      name = 'Canyon Vista'
+    elif name == 27:
+        name = 'Bistro'
+    elif name == 32:
+      name = 'Roots'
+    elif name == 42:
+      name = 'Dining Delivers'
+    elif name == 64:
+      name = 'Sixty-four Degrees'
+    elif name == 65:
+      name = 'Sixty-four North'
+    else:
+      name = 'Not found'
+    
+    csv_data.rename(columns = {"Location": name},inplace=True)
+    df_list_holder.append(csv_data)
+    df_list = np.char.replace(df_list_holder, 'csv_data', name)
+    
+    
+  
+  return (df_list) 
+  
+df_list=CSVformatting(csv_data_list)
+
+#Needed Functions:
+#csv of equivalences appended to column of data frames
+#lbs conversion
+#separation of categories
+#patty calculations
+#summing each category
+
+
+
+#print(df_list)
