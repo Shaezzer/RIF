@@ -1,87 +1,185 @@
 import pandas as pd
-#import xlrd
-#import xlwt
 import numpy as np
 
-'''
-#formatting Excel
-#need to find way to insert row and write column headers
-#or see if I just xls to csv if I can create headers
+
+#Pull CSV File
+csv_data_list=['PoundCount.csv']
 
 
-def getExcel (filename):
-  data_xls = xlrd.open_workbook(filename)
-  sheet_names = data_xls.sheet_names()
-  sheet_xls = data_xls.sheet_by_index(0)
-  data_csv = data_xls.to_csv(filename, encoding='utf-8')
-  print(data_csv)
-  return data_csv
-
-getExcel('PinesAll.xls')
-'''
-
-
-#List of all CSV files
-csv_data_list=['PinesIdeal.csv']
-#Empty list for dataframes
-df_list_holder=[]
-
+#Creating Uniform Dataframes from CSV Files
 def CSVformatting(csv_list):
-  for item in csv_list:
 
-    #Importing the CSV files
+  for item in csv_list:
     csv_data = pd.read_csv(item)
     csv_data.dropna(axis=0, inplace=True)
-    csv_data.drop(['Initials','Price','Total'],axis=1,inplace=True)
+    csv_data.drop(['Initials','Total'],axis=1,inplace=True)
 
-    #Renaming Column header to location name
-    name = int(csv_data.iloc[0][1])
-    if name==1:
-      name = 'Pines'
-    elif name==5:
-      name = 'Ocean View'
-    elif name == 6:
-      name = 'Goody''s Place'
-    elif name == 11:
-      name = 'Foodworx'
-    elif name == 12:
-      name= 'Revelle Catering'
-    elif name == 15:
-      name = 'Club Med'
-    elif name == 18:
-      name = 'Cafe Ventanas'
-    elif name == 24:
-      name = 'Canyon Vista'
-    elif name == 27:
-        name = 'Bistro'
-    elif name == 32:
-      name = 'Roots'
-    elif name == 42:
-      name = 'Dining Delivers'
-    elif name == 64:
-      name = 'Sixty-four Degrees'
-    elif name == 65:
-      name = 'Sixty-four North'
+  return (csv_data) 
+df_all=CSVformatting(csv_data_list)
+
+
+#List for common multiplier
+multiplier_list_5 = ['5/1lb']
+multiplier_list_6_5 = ['6.5#']
+multiplier_list_10 = ['2/5#', '4/2.5#', '30/5.33z', '107/1.5 OZ' ,'10#']
+multiplier_list_12 = ['6/2#']
+multiplier_list_15 = ['1/15#', '6/2.5#','5/3#']
+multiplier_list_16 = ['6/43z']
+multiplier_list_18 = ['72/4z']
+multiplier_list_20 = ['2/10#' ,'80/4z']
+multiplier_list_22 = ['2/11#']
+multiplier_list_25 = ['25#','4/cs','12/2.5#']
+multiplier_list_40 = ['2/20#','4/10#']
+
+
+
+def equivalences(df):
+  df["Multiplier"] = np.nan
+  for i in range(len(df)):
+    unit = df.iloc[i,'Purch Unit']
+    item = df.iloc[i,'FP Item']
+    mult = df.iloc[i,'Multiplier']
+    if unit in multiplier_list_5:
+      mult = 5
+    elif unit  in multiplier_list_6_5:
+      mult = 6.5
+    elif unit  in multiplier_list_10:
+      mult = 10
+    elif unit  in multiplier_list_12:
+      mult = 12
+    elif unit  in multiplier_list_15:
+      mult = 15
+    elif unit  in multiplier_list_16:
+      mult = 16.125      
+    elif unit  in multiplier_list_18:
+      mult = 18       
+    elif unit  in multiplier_list_20:
+      mult = 20
+    elif unit  in multiplier_list_22:
+      mult = 22  
+    elif unit  in multiplier_list_40:
+      mult = 40
+
+
+        #Multipliers for cases
+    elif unit  == 'CASE':
+      if '1256' in item:
+        mult = 10
+      if '1158' in item:
+        mult = 'need'
+      if '8380' in item:
+        mult = 'need'
+      if '2058' in item:
+        mult = 'need'
+      #if '' in df['FP Item']:
+      #  df['Multiplier'] = 'need'
+      else:
+        mult = 0
+          
+
+        #Multipliers for special cases
+    elif unit  == '40/CT':
+      if '4725' in item:
+        mult = 'need'
+    elif unit  == '107/cs':
+      if '1038' in item:
+        mult = 'need'
+
+
+        #egg multiplier
+    elif unit  == '12/DZ':
+      if '1064' in item:
+        mult = 'need'
+    elif unit  == '15 DZ':
+      if '1064' in item:
+        mult = 'need'
+
+    elif 'SUPP' in item:
+      mult = 0
+
+
+
+    #elif df['Purch Unit']  == 'LB'|'lb'|1:
+    # df['Multiplier'] = 1
+
     else:
-      name = 'Not found'
-    
-    csv_data.rename(columns = {"Location": name},inplace=True)
-    df_list_holder.append(csv_data)
-    df_list = np.char.replace(df_list_holder, 'csv_data', name)
-    
-    
-  
-  return (df_list) 
-  
-df_list=CSVformatting(csv_data_list)
+      df['Multiplier'] = 0
+
+
+  return df
+
+df_all = equivalences(df_all)
+
+df_all.to_excel('output.xlsx')
+'''
+#creating empty dataframes for all locations
+df_location_list = ['df_pines','df_OV','df_goodys','df_foodworx','df_catering','df_clubmed','df_cafev','df_canyonvista','df_bistro','df_roots','df_dd','df_64','df_64north']
+for item in df_location_list:
+  item = pd.DataFrame(columns=['Date', 'Location', 'Vendor','VON','FP Item','Quantity','Purch Unit','Unit Price'])
+
+def location_split(df_all):
+  for row in len(df_all):
+    if '01' in df_all.iloc[row]['Location']:
+      df_pines = df_all.append(df_all.loc[row], ignore_index=True)
+    if '05' in df_all.iloc[row]['Location']:
+      df_OV = df_all.append(df_all.loc[row], ignore_index=True)
+    if '06' in df_all.iloc[row]['Location']:
+      df_goodys = df_all.append(df_all.loc[row], ignore_index=True)
+    if '11' in df_all.iloc[row]['Location']:
+      df_foodworx = df_all.append(df_all.loc[row], ignore_index=True)
+    if '12' in df_all.iloc[row]['Location']:
+      df_catering = df_all.append(df_all.loc[row], ignore_index=True)
+    if '15' in df_all.iloc[row]['Location']:
+      df_clubmed = df_all.append(df_all.loc[row], ignore_index=True)
+    if '18' in df_all.iloc[row]['Location']:
+      df_cafev = df_all.append(df_all.loc[row], ignore_index=True)
+    if '24' in df_all.iloc[row]['Location']:
+      df_canyonvista = df_all.append(df_all.loc[row], ignore_index=True)
+    if '27' in df_all.iloc[row]['Location']:
+      df_bistro = df_all.append(df_all.loc[row], ignore_index=True)
+    if '32' in df_all.iloc[row]['Location']:
+      df_roots = df_all.append(df_all.loc[row], ignore_index=True)
+    if '42' in df_all.iloc[row]['Location']:
+      df_dd = df_all.append(df_all.loc[row], ignore_index=True)
+    if '64' in df_all.iloc[row]['Location']:
+      df_64 = df_all.append(df_all.loc[row], ignore_index=True)
+    if '65' in df_all.iloc[row]['Location']:
+      df_64north = df_all.append(df_all.loc[row], ignore_index=True)
+  return(df_pines,df_OV,df_goodys,df_foodworx,df_catering,df_clubmed,df_cafev,df_canyonvista,df_bistro,df_roots,df_dd,df_64,df_64north)
+
+
+
+def supplement(df_all):
+  if 'Supp' in fp_item:
+    if 'PK' in fp_item:
+      PorkSupplement = PorkSupplement + df_all['Quantity']
+
+#def mult(df_all):
+  #if fp_item contains EG 
+
+
+
+df_location_list = [df_pines, df_OV,df_goodys,df_foodworx,df_catering,df_clubmed,df_cafev,df_canyonvista,df_bistro,df_roots,df_dd,df_64,df_64north]
+for item in df_location_list:
+  item = item.apply
+
+'''
 
 #Needed Functions:
+
 #csv of equivalences appended to column of data frames
+
 #lbs conversion
+
 #separation of categories
+
 #patty calculations
+
 #summing each category
 
 
 
-#print(df_list)
+
+df_all.head()
+
+
